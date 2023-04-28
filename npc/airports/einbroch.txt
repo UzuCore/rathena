@@ -1,5 +1,5 @@
 //===== rAthena Script ======================================= 
-//= Einbroch Airport Staff
+//= 아인브로흐 공항 직원
 //===== By: ================================================== 
 //= L0ne_W0lf, Muad_Dib
 //===== Current Version: =====================================
@@ -14,19 +14,12 @@
 
 airport,143,43,5	script	Airport Staff#airport1a::airport1	90,{
 	mes "[Airport Staff]";
-	mes "Welcome to the";
-	mes "Einbroch Airport,";
-	mes "where we offer nonstop";
-	mes "flights to the cities of";
-	mes "Juno, Lighthalzen and Hugel.";
+	mes "Welcome to the Einbroch Airport, where we offer nonstop flights to the cities of Juno, Lighthalzen and Hugel.";
 	next;
 	if (select("Board the Airship:Cancel") == 1) {
 		mes "[Airport Staff]";
-		mes "The Airship boarding fee";
-		mes "is 1,200 zeny, but if you've";
-		mes "got a Free Ticket for Airship,";
-		mes "the fee will be waived. Will";
-		mes "you board the Airship?";
+		mes "The Airship boarding fee is 1,200 zeny, but if you've got a Free Ticket for Airship, the fee will be waived.";
+		mes "Will you board the Airship?";
 		next;
 		if (select("Yes:No") == 1) {
 			if (countitem(7311) > 0) {
@@ -40,12 +33,8 @@ airport,143,43,5	script	Airport Staff#airport1a::airport1	90,{
 				end;
 			}
 			mes "[Airport Staff]";
-			mes "I'm sorry, but you don't";
-			mes "have a Free Ticket for";
-			mes "Airship and you don't have";
-			mes "enough zeny for boarding";
-			mes "the Airship. Remember, the";
-			mes "boarding fee is 1,200 zeny.";
+			mes "I'm sorry, but you don't have a Free Ticket for Airship and you don't have enough zeny for boarding the Airship.";
+			mes "Remember, the boarding fee is 1,200 zeny.";
 			close;
 		}
 	}
