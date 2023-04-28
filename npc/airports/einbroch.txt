@@ -50,17 +50,13 @@ airport,126,43,5	duplicate(airport1)	Airport Staff#airport1c	90
 airport,143,49,3	script	Arrival Staff#airport2a::airport2	90,{
 	mes "[Arrival Staff]";
 	mes "Welcome to Einbroch Airport.";
-	mes "If you are arriving from your";
-	mes "flight, let me guide you to the";
-	mes "main terminal. Otherwise, please board the Airship to depart to";
-	mes "Juno, Lighthalzen and Hugel.";
+	mes "If you are arriving from your flight, let me guide you to the main terminal.";
+	mes "Otherwise, please board the Airship to depart to Juno, Lighthalzen and Hugel.";
 	next;
 	if (select("Exit to main terminal.:Cancel.") == 1) {
 		mes "[Arrival Staff]";
-		mes "Once you're in the main terminal, you will need to pay the fee again";
-		mes "to board an Airship. You should";
-		mes "only exit if the city of Einbroch";
-		mes "is your intended destination.";
+		mes "Once you're in the main terminal, you will need to pay the fee again to board an Airship.";
+		mes "You should only exit if the city of Einbroch is your intended destination.";
 		mes "Proceed to the main terminal?";
 		next;
 		if (select("Yes:No") == 1) {
@@ -69,10 +65,7 @@ airport,143,49,3	script	Arrival Staff#airport2a::airport2	90,{
 		}
 	}
 	mes "[Arrival Staff]";
-	mes "Alright, thank you";
-	mes "for your patronage";
-	mes "and I hope you have";
-	mes "a pleasant flight~";
+	mes "Alright, thank you for your patronage and I hope you have a pleasant flight~";
 	close;
 }
 
@@ -81,19 +74,11 @@ airport,158,50,3	duplicate(airport2)	Arrival Staff#airport2c	90
 
 einbroch,94,267,3	script	Airship Staff#ein01	91,{
 	mes "[Airship Staff]";
-	mes "Welcome to the";
-	mes "Einbroch Airport.";
-	mes "Please use this door to";
-	mes "board the Airship which stops";
-	mes "over Juno, Lighthalzen and";
-	mes "Hugel in the Schwarzwald Republic.";
+	mes "Welcome to the Einbroch Airport.";
+	mes "Please use this door to board the Airship which stops over Juno, Lighthalzen and Hugel in the Schwarzwald Republic.";
 	next;
 	mes "[Airship Staff]";
-	mes "Otherwise, if Einbroch is";
-	mes "your intended destination,";
-	mes "please head down the stairs";
-	mes "and ask the Arrival Staff to lead";
-	mes "you to the main terminal. Thank";
-	mes "you, and enjoy your travels.";
+	mes "Otherwise, if Einbroch is your intended destination, please head down the stairs and ask the Arrival Staff to lead you to the main terminal.";
+	mes "Thank you, and enjoy your travels.";
 	close;
 }
