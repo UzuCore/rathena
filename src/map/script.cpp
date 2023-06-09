@@ -5810,7 +5810,7 @@ BUILDIN_FUNC(warpparty)
 
 			struct map_data *mapdata = map_getmapdata(m);
 
-			if ( mapdata == nullptr || mapdata->flag[MF_NOWARP] || mapdata->flag[MF_NOTELEPORT] )
+			if ( mapdata == nullptr || mapdata->getMapFlag(MF_NOWARP) || mapdata->getMapFlag(MF_NOTELEPORT) )
 				return SCRIPT_CMD_FAILURE;
 
 			i = 0;
@@ -5851,15 +5851,15 @@ BUILDIN_FUNC(warpparty)
 		switch( type )
 		{
 		case WARPPARTY_RANDOM:
-			if (!mapdata->flag[MF_NOWARP])
+			if (!mapdata->getMapFlag(MF_NOWARP))
 				ret = (e_setpos)pc_randomwarp(pl_sd,CLR_TELEPORT);
 		break;
 		case WARPPARTY_SAVEPOINTALL:
-			if (!mapdata->flag[MF_NORETURN])
+			if (!mapdata->getMapFlag(MF_NORETURN))
 				ret = pc_setpos( pl_sd, mapindex_name2id( pl_sd->status.save_point.map ), pl_sd->status.save_point.x, pl_sd->status.save_point.y, CLR_TELEPORT );
 		break;
 		case WARPPARTY_SAVEPOINT:
-			if (!mapdata->flag[MF_NORETURN])
+			if (!mapdata->getMapFlag(MF_NORETURN))
 				ret = pc_setpos( pl_sd, mapindex_name2id( sd->status.save_point.map ),sd->status.save_point.x, sd->status.save_point.y, CLR_TELEPORT );
 		break;
 		case WARPPARTY_LEADER:
@@ -5873,7 +5873,7 @@ BUILDIN_FUNC(warpparty)
 			}
 			// Fall through
 		case WARPPARTY_RANDOMALLAREA:
-			if(!mapdata->flag[MF_NORETURN] && !mapdata->flag[MF_NOWARP] && pc_job_can_entermap((enum e_job)pl_sd->status.class_, m, pc_get_group_level(pl_sd))){
+			if(!mapdata->getMapFlag(MF_NORETURN) && !mapdata->getMapFlag(MF_NOWARP) && pc_job_can_entermap((enum e_job)pl_sd->status.class_, m, pc_get_group_level(pl_sd))){
 				if (rx || ry) {
 					int x1 = x + rx, y1 = y + ry,
 						x0 = x - rx, y0 = y - ry,
@@ -11157,11 +11157,18 @@ BUILDIN_FUNC(monster)
 	else
 		m = map_mapname2mapid(mapn);
 
+	TBL_MOB* md;
+
 	for(i = 0; i < amount; i++) { //not optimised
 		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai);
 
-		if (mobid)
+		if (mobid > 0) {
+			md = map_id2md(mobid);
+			if (md)
+				md->next_walktime = INVALID_TIMER;
+
 			mapreg_setreg(reference_uid(add_str("$@mobid"), i), mobid);
+		}
 	}
 
 	return SCRIPT_CMD_SUCCESS;
@@ -11274,11 +11281,18 @@ BUILDIN_FUNC(areamonster)
 	else
 		m = map_mapname2mapid(mapn);
 
+	TBL_MOB* md;
+
 	for(i = 0; i < amount; i++) { //not optimised
 		int mobid = mob_once_spawn_area(sd, m, x0, y0, x1, y1, str, class_, 1, event, size, ai);
 
-		if (mobid)
+		if (mobid > 0) {
+			md = map_id2md(mobid);
+			if (md)
+				md->next_walktime = INVALID_TIMER;
+
 			mapreg_setreg(reference_uid(add_str("$@mobid"), i), mobid);
+		}
 	}
 
 	return SCRIPT_CMD_SUCCESS;

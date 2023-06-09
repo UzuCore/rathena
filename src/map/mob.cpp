@@ -568,7 +568,7 @@ bool mob_ksprotected (struct block_list *src, struct block_list *target)
 		struct map_data *mapdata = map_getmapdata(md->bl.m);
 		char output[128];
 		
-		if( mapdata->flag[MF_ALLOWKS] || mapdata_flag_ks(mapdata) )
+		if( mapdata->getMapFlag(MF_ALLOWKS) || mapdata_flag_ks(mapdata) )
 			return false; // Ignores GVG, PVP and AllowKS map flags
 
 		if( md->get_bosstype() == BOSSTYPE_MVP || md->master_id )
@@ -1570,6 +1570,12 @@ int mob_randomwalk(struct mob_data *md,t_tick tick)
 	int speed;
 
 	nullpo_ret(md);
+
+	// Initialize next_walktime
+	if (md->next_walktime == INVALID_TIMER) {
+		md->next_walktime = tick+rnd()%1000+MIN_RANDOMWALKTIME;
+		return 1;
+	}
 
 	if(DIFF_TICK(md->next_walktime,tick)>0 ||
 	   status_has_mode(&md->status,MD_NORANDOMWALK) ||
