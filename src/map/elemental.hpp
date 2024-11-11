@@ -107,7 +107,7 @@ extern ElementalDatabase elemental_db;
 
 struct view_data * elemental_get_viewdata(int class_);
 
-int elemental_create(map_session_data *sd, int class_, unsigned int lifetime);
+int elemental_create(map_session_data *sd, int class_, uint32 lifetime);
 int elemental_data_received(s_elemental *ele, bool flag);
 int elemental_save(s_elemental_data *ed);
 
@@ -123,7 +123,7 @@ void elemental_summon_stop(s_elemental_data *ed);
 t_tick elemental_get_lifetime(s_elemental_data *ed);
 
 int elemental_unlocktarget(s_elemental_data *ed);
-bool elemental_skillnotok(uint16 skill_id, s_elemental_data *ed);
+bool elemental_skillnotok( uint16 skill_id, s_elemental_data& ed );
 int elemental_set_target( map_session_data *sd, block_list *bl );
 int elemental_clean_effect(s_elemental_data *ed);
 int elemental_action(s_elemental_data *ed, block_list *bl, t_tick tick);

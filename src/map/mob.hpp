@@ -38,6 +38,9 @@ const t_tick MIN_MOBLINKTIME = 1000;
 //Min time between random walks
 const t_tick MIN_RANDOMWALKTIME = 4000;
 
+// How often a monster will check for using a skill on non-attack states (in ms)
+const t_tick MOB_SKILL_INTERVAL = 1000;
+
 //Distance that slaves should keep from their master.
 #define MOB_SLAVEDISTANCE 2
 
@@ -219,7 +222,7 @@ public:
 
 struct s_mob_item_drop_ratio {
 	t_itemid nameid;
-	uint16 drop_ratio;
+	uint32 drop_ratio;
 	std::vector<uint16> mob_ids;
 };
 
@@ -253,22 +256,23 @@ struct s_mob_drop {
 };
 
 struct s_mob_db {
-	uint32 id;
-	std::string sprite, name, jname;
-	t_exp base_exp;
-	t_exp job_exp;
-	t_exp mexp;
-	uint16 range2, range3;
-	std::vector<e_race2> race2;	// celest
-	uint16 lv;
-	s_mob_drop dropitem[MAX_MOB_DROP_TOTAL], mvpitem[MAX_MVP_DROP_TOTAL];
-	status_data status;
-	view_data vd;
-	uint32 option;
-	std::vector<std::shared_ptr<s_mob_skill>> skill;
-	uint16 damagetaken;
+	uint32 id{};
+	std::string sprite{}, name{}, jname{};
+	t_exp base_exp{};
+	t_exp job_exp{};
+	t_exp mexp{};
+	uint16 range2{}, range3{};
+	std::vector<e_race2> race2{};	// celest
+	uint16 lv{ 1 };
+	s_mob_drop dropitem[MAX_MOB_DROP_TOTAL]{}, mvpitem[MAX_MVP_DROP_TOTAL]{};
+	status_data status{};
+	view_data vd{};
+	uint32 option{};
+	std::vector<std::shared_ptr<s_mob_skill>> skill{};
+	uint16 damagetaken{ 100 };
 
 	e_mob_bosstype get_bosstype();
+	s_mob_db();
 };
 
 class MobDatabase : public TypesafeCachedYamlDatabase <uint32, s_mob_db> {
@@ -276,7 +280,7 @@ private:
 	bool parseDropNode(std::string nodeName, const ryml::NodeRef& node, uint8 max, s_mob_drop *drops);
 
 public:
-	MobDatabase() : TypesafeCachedYamlDatabase("MOB_DB", 3, 1) {
+	MobDatabase() : TypesafeCachedYamlDatabase("MOB_DB", 4, 1) {
 
 	}
 
@@ -312,6 +316,7 @@ private:
 };
 
 extern MapDropDatabase map_drop_db;
+extern std::unordered_map<uint16, std::vector<spawn_info>> mob_spawn_data;
 
 struct mob_data {
 	struct block_list bl;
@@ -323,19 +328,19 @@ struct mob_data {
 	std::shared_ptr<s_mob_db> db;	//For quick data access (saves doing mob_db(md->mob_id) all the time) [Skotlex]
 	char name[NAME_LENGTH];
 	struct s_specialState {
-		unsigned int size : 2; //Small/Big monsters.
+		uint32 size : 2; //Small/Big monsters.
 		enum mob_ai ai; //Special ai for summoned monsters.
-		unsigned int clone : 1;/* is clone? 1:0 */
+		uint32 clone : 1;/* is clone? 1:0 */
 	} special_state; //Special mob information that does not needs to be zero'ed on mob respawn.
 	struct s_MobState {
-		unsigned int aggressive : 1; //Signals whether the mob AI is in aggressive mode or reactive mode. [Skotlex]
-		unsigned int steal_coin_flag : 1;
-		unsigned int soul_change_flag : 1; // Celest
-		unsigned int alchemist: 1;
-		unsigned int npc_killmonster: 1; //for new killmonster behavior
-		unsigned int rebirth: 1; // NPC_Rebirth used
-		unsigned int boss : 1;
-		unsigned int copy_master_mode : 1; ///< Whether the spawned monster should copy the master's mode.
+		uint32 aggressive : 1; //Signals whether the mob AI is in aggressive mode or reactive mode. [Skotlex]
+		uint32 steal_coin_flag : 1;
+		uint32 soul_change_flag : 1; // Celest
+		uint32 can_escape: 1;
+		uint32 npc_killmonster: 1; //for new killmonster behavior
+		uint32 rebirth: 1; // NPC_Rebirth used
+		uint32 boss : 1;
+		uint32 copy_master_mode : 1; ///< Whether the spawned monster should copy the master's mode.
 		enum MobSkillState skillstate;
 		unsigned char steal_flag; //number of steal tries (to prevent steal exploit on mobs with few items) [Lupus]
 		unsigned char attacked_count; //For rude attacked.
@@ -344,21 +349,22 @@ struct mob_data {
 	struct guardian_data* guardian_data;
 	struct s_dmglog {
 		int id; //char id
-		unsigned int dmg;
-		unsigned int flag : 2; //0: Normal. 1: Homunc exp. 2: Pet exp
+		uint32 dmg;
+		uint32 flag : 2; //0: Normal. 1: Homunc exp. 2: Pet exp
 	} dmglog[DAMAGELOG_SIZE];
 	uint32 spotted_log[DAMAGELOG_SIZE];
 	struct spawn_data *spawn; //Spawn data.
 	int spawn_timer; //Required for Convex Mirror
+	int16 centerX, centerY; // Spawn center of this individual monster
 	struct s_mob_lootitem *lootitems;
 	short mob_id;
-	unsigned int tdmg; //Stores total damage given to the mob, for exp calculations. [Skotlex]
+	uint32 tdmg; //Stores total damage given to the mob, for exp calculations. [Skotlex]
 	int level;
 	int target_id,attacked_id,norm_attacked_id;
 	int areanpc_id; //Required in OnTouchNPC (to avoid multiple area touchs)
 	int bg_id; // BattleGround System
 
-	t_tick next_walktime,last_thinktime,last_linktime,last_pcneartime,dmgtick;
+	t_tick next_walktime,last_thinktime,last_linktime,last_pcneartime,dmgtick,last_canmove,last_skillcheck;
 	short move_fail_count;
 	short lootitem_count;
 	short min_chase;
@@ -464,16 +470,18 @@ enum e_mob_skill_condition {
 };
 
 // The data structures for storing delayed item drops
-struct item_drop {
+struct s_item_drop{
 	struct item item_data;
 	unsigned short mob_id;
 	enum bl_type src_type;
-	struct item_drop* next;
 };
-struct item_drop_list {
-	int16 m, x, y;                       // coordinates
-	int first_charid, second_charid, third_charid; // charid's of players with higher pickup priority
-	struct item_drop* item;            // linked list of drops
+
+struct s_item_drop_list{
+	// coordinates
+	int16 m, x, y;
+	// charid's of players with higher pickup priority
+	int first_charid, second_charid, third_charid;
+	std::vector<std::shared_ptr<s_item_drop>> items;
 };
 
 uint16 mobdb_searchname(const char * const str);
@@ -484,18 +492,18 @@ struct view_data* mob_get_viewdata(int mob_id);
 void mob_set_dynamic_viewdata( struct mob_data* md );
 void mob_free_dynamic_viewdata( struct mob_data* md );
 
-struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, unsigned int size, enum mob_ai ai);
+struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, uint32 size, enum mob_ai ai);
 
 int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y,
-	const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai);
+	const char* mobname, int mob_id, int amount, const char* event, uint32 size, enum mob_ai ai);
 
 int mob_once_spawn_area(map_session_data* sd, int16 m,
-	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai);
+	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, uint32 size, enum mob_ai ai);
 
 bool mob_ksprotected (struct block_list *src, struct block_list *target);
 
 int mob_spawn_guardian(const char* mapname, int16 x, int16 y, const char* mobname, int mob_id, const char* event, int guardian, bool has_index);	// Spawning Guardians [Valaris]
-int mob_spawn_bg(const char* mapname, int16 x, int16 y, const char* mobname, int mob_id, const char* event, unsigned int bg_id);
+int mob_spawn_bg(const char* mapname, int16 x, int16 y, const char* mobname, int mob_id, const char* event, uint32 bg_id);
 int mob_guardian_guildchange(struct mob_data *md); //Change Guardian's ownership. [Skotlex]
 
 int mob_randomwalk(struct mob_data *md,t_tick tick);
@@ -510,8 +518,8 @@ int mob_parse_dataset(struct spawn_data *data);
 void mob_log_damage(struct mob_data *md, struct block_list *src, int damage);
 void mob_damage(struct mob_data *md, struct block_list *src, int damage);
 int mob_dead(struct mob_data *md, struct block_list *src, int type);
-void mob_revive(struct mob_data *md, unsigned int hp);
-void mob_heal(struct mob_data *md,unsigned int heal);
+void mob_revive(struct mob_data *md, uint32 hp);
+void mob_heal(struct mob_data *md,uint32 heal);
 
 #define mob_stop_walking(md, type) unit_stop_walking(&(md)->bl, type)
 #define mob_stop_attack(md) unit_stop_attack(&(md)->bl)
@@ -535,10 +543,11 @@ int mobskill_event(struct mob_data *md,struct block_list *src,t_tick tick, int f
 int mob_summonslave(struct mob_data *md2,int *value,int amount,uint16 skill_id);
 int mob_countslave(struct block_list *bl);
 int mob_count_sub(struct block_list *bl, va_list ap);
+int mob_removeslaves(block_list* bl);
 
 int mob_is_clone(int mob_id);
 
-int mob_clone_spawn(map_session_data *sd, int16 m, int16 x, int16 y, const char *event, int master_id, enum e_mode mode, int flag, unsigned int duration);
+int mob_clone_spawn(map_session_data *sd, int16 m, int16 x, int16 y, const char *event, int master_id, enum e_mode mode, int flag, uint32 duration);
 int mob_clone_delete(struct mob_data *md);
 
 void mob_reload_itemmob_data(void);
@@ -555,7 +564,7 @@ TIMER_FUNC(mvptomb_delayspawn);
 void mvptomb_create(struct mob_data *md, char *killer, time_t time);
 void mvptomb_destroy(struct mob_data *md);
 
-void mob_setdropitem_option(struct item *itm, struct s_mob_drop *mobdrop);
+void mob_setdropitem_option( item& itm, s_mob_drop& mobdrop );
 
 #define CHK_MOBSIZE(size) ((size) >= SZ_SMALL && (size) < SZ_MAX) /// Check valid Monster Size
 

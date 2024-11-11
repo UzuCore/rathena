@@ -3,8 +3,8 @@
 
 #include "duel.hpp"
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 #include <common/cbasetypes.hpp>
@@ -157,7 +157,7 @@ static void duel_set(const size_t did, map_session_data* sd) {
  * Create a new duel for sd
  * return new duel_id or 0 when fail
  */
-size_t duel_create(map_session_data* sd, const unsigned int maxpl)
+size_t duel_create(map_session_data* sd, const uint32 maxpl)
 {
 	static size_t lastID=0;
 	lastID++;

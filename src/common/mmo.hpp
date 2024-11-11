@@ -4,7 +4,7 @@
 #ifndef MMO_HPP
 #define MMO_HPP
 
-#include <time.h>
+#include <ctime>
 
 #include <config/core.hpp>
 
@@ -89,8 +89,9 @@ typedef uint32 t_itemid;
 #endif
 #define MAX_FAME 1000000000 ///Max fame points
 #define MAX_CART 100 ///Maximum item in cart
-#define MAX_SKILL 1500 ///Maximum skill can be hold by Player, Homunculus, & Mercenary (skill list) AND skill_db limit
-#define DEFAULT_WALK_SPEED 150 ///Default walk speed
+#define MAX_SKILL 1631 ///Maximum skill can be hold by Player, Homunculus, & Mercenary (skill list) AND skill_db limit
+#define DEFAULT_WALK_SPEED 150 ///Default walk speed (other than NPC)
+#define DEFAULT_NPC_WALK_SPEED 200 ///Default NPC walk speed
 #define MIN_WALK_SPEED 20 ///Min walk speed
 #define MAX_WALK_SPEED 1000 ///Max walk speed
 #define MAX_STORAGE 600 ///Max number of storage slots a player can have
@@ -114,7 +115,10 @@ typedef uint32 t_itemid;
 #define MAX_CLAN 500
 #define MAX_CLANALLIANCE 6
 #ifndef MAX_BARTER_REQUIREMENTS
-	#define MAX_BARTER_REQUIREMENTS 5
+	#define MAX_BARTER_REQUIREMENTS 6
+#endif
+#ifndef WEB_AUTH_TOKEN_LENGTH
+	#define WEB_AUTH_TOKEN_LENGTH 16+1
 #endif
 
 enum e_enchantgrade : uint16{
@@ -148,7 +152,7 @@ const t_itemid WEDDING_RING_F = 2635;
 //For character names, title names, guilds, maps, etc.
 //Includes null-terminator as it is the length of the array.
 #define NAME_LENGTH (23 + 1)
-#define PASSWD_LENGTH (32+1)
+#define PASSWD_LENGTH (32 + 1)
 //NPC names can be longer than it's displayed on client (NAME_LENGTH).
 #define NPC_NAME_LENGTH 50
 // <NPC_NAME_LENGTH> for npc name + 2 for a "::" + <NAME_LENGTH> for label + 1 for EOS
@@ -310,16 +314,16 @@ struct item {
 	int id;
 	t_itemid nameid;
 	short amount;
-	unsigned int equip; // location(s) where item is equipped (using enum equip_pos for bitmasking)
+	uint32 equip; // location(s) where item is equipped (using enum equip_pos for bitmasking)
 	char identify;
 	char refine;
 	char attribute;
 	t_itemid card[MAX_SLOTS];
 	struct s_item_randomoption option[MAX_ITEM_RDM_OPT];		// max of 5 random options can be supported.
-	unsigned int expire_time;
+	uint32 expire_time;
 	char favorite, bound;
 	uint64 unique_id;
-	unsigned int equipSwitch; // location(s) where item is equipped for equip switching (using enum equip_pos for bitmasking)
+	uint32 equipSwitch; // location(s) where item is equipped for equip switching (using enum equip_pos for bitmasking)
 	uint8 enchantgrade;
 } __attribute__((packed));
 
@@ -394,8 +398,8 @@ struct s_skill {
 };
 
 struct script_reg_state {
-	unsigned int type : 1; // because I'm a memory hoarder and having them in the same struct would be a 8-byte/instance waste while ints outnumber str on a 10000-to-1 ratio.
-	unsigned int update : 1; // whether it needs to be sent to char server for insertion/update/delete
+	uint32 type : 1; // because I'm a memory hoarder and having them in the same struct would be a 8-byte/instance waste while ints outnumber str on a 10000-to-1 ratio.
+	uint32 update : 1; // whether it needs to be sent to char server for insertion/update/delete
 };
 
 struct script_reg_num {
@@ -493,8 +497,8 @@ struct s_homunculus {	//[orn]
 	uint32 char_id;
 	short class_;
 	short prev_class;
-	int hp,max_hp,sp,max_sp;
-	unsigned int intimacy;	//[orn]
+	uint32 hp,max_hp,sp,max_sp;
+	uint32 intimacy;	//[orn]
 	short hunger;
 	struct s_skill hskill[MAX_HOMUNSKILL]; //albator
 	short skillpts;
@@ -525,7 +529,7 @@ struct s_mercenary {
 	uint32 char_id;
 	short class_;
 	int hp, sp;
-	unsigned int kill_count;
+	uint32 kill_count;
 	t_tick life_time;
 };
 
@@ -547,7 +551,7 @@ struct s_friend {
 
 #ifdef HOTKEY_SAVING
 struct hotkey {
-	unsigned int id;
+	uint32 id;
 	unsigned short lv;
 	unsigned char type; // 0: item, 1: skill
 };
@@ -565,9 +569,9 @@ struct mmo_charstatus {
 	int zeny;
 
 	short class_; ///< Player's JobID
-	unsigned int status_point,skill_point,trait_point;
+	uint32 status_point,skill_point,trait_point;
 	int hp,max_hp,sp,max_sp,ap,max_ap;
-	unsigned int option;
+	uint32 option;
 	short manner; // Defines how many minutes a char will be muted, each negative point is equivalent to a minute.
 	unsigned char karma;
 	short hair,hair_color,clothes_color,body;
@@ -586,7 +590,7 @@ struct mmo_charstatus {
 	uint8 body_direction;
 
 	char name[NAME_LENGTH];
-	unsigned int base_level,job_level;
+	uint32 base_level,job_level;
 	unsigned short str,agi,vit,int_,dex,luk;
 	unsigned short pow,sta,wis,spl,con,crt;
 	unsigned char slot,sex;
@@ -604,14 +608,15 @@ struct mmo_charstatus {
 #ifdef HOTKEY_SAVING
 	struct hotkey hotkeys[MAX_HOTKEYS_DB];
 #endif
-	bool show_equip,allow_party, disable_call;
+	bool show_equip, disable_call;
+	bool disable_partyinvite;
 	short rename;
 
 	time_t delete_date;
 	time_t unban_time;
 
 	// Char server addon system
-	unsigned int character_moves;
+	uint32 character_moves;
 
 	unsigned char font;
 
@@ -670,7 +675,7 @@ struct mail_data {
 };
 
 struct auction_data {
-	unsigned int auction_id;
+	uint32 auction_id;
 	int seller_id;
 	char seller_name[NAME_LENGTH];
 	int buyer_id;
@@ -736,6 +741,7 @@ struct guild_expulsion {
 	char name[NAME_LENGTH];
 	char mes[40];
 	uint32 account_id;
+	uint32 char_id;
 };
 
 struct guild_skill {
@@ -743,7 +749,7 @@ struct guild_skill {
 };
 
 struct Channel;
-struct guild {
+struct mmo_guild {
 	int guild_id;
 	short guild_lv, connect_member, max_member, average_lv;
 	t_exp exp;
@@ -758,14 +764,7 @@ struct guild {
 	struct guild_alliance alliance[MAX_GUILDALLIANCE];
 	struct guild_expulsion expulsion[MAX_GUILDEXPULSION];
 	struct guild_skill skill[MAX_GUILDSKILL];
-	struct Channel *channel;
-	int instance_id;
 	time_t last_leader_change;
-
-	/* Used by char-server to save events for guilds */
-	unsigned short save_flag;
-
-	int32 chargeshout_flag_id;
 };
 
 enum e_woe_type{
@@ -1126,8 +1125,8 @@ enum e_pc_reg_loading {
 enum e_party_member_withdraw {
 	PARTY_MEMBER_WITHDRAW_LEAVE,	  ///< /leave
 	PARTY_MEMBER_WITHDRAW_EXPEL,	  ///< Kicked
-	PARTY_MEMBER_WITHDRAW_CANT_LEAVE, ///< TODO: Cannot /leave
-	PARTY_MEMBER_WITHDRAW_CANT_EXPEL, ///< TODO: Cannot be kicked
+	PARTY_MEMBER_WITHDRAW_CANT_LEAVE, ///< Cannot /leave
+	PARTY_MEMBER_WITHDRAW_CANT_EXPEL, ///< Cannot be kicked
 };
 
 enum e_rank {

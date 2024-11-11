@@ -3,13 +3,13 @@
 
 #include "inter.hpp"
 
+#include <cstdlib>
+#include <cstring>
+#include <cstring>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include <stdlib.h>
-#include <string.h>
-#include <string>
 #include <sys/stat.h> // for stat/lstat/fstat - [Dekamaster/Ultimate GM Tool]
 
 #include <common/cbasetypes.hpp>
@@ -44,7 +44,7 @@ InterServerDatabase interServerDb;
 
 #define WISDATA_TTL (60*1000)	//Wis data Time To Live (60 seconds)
 
-Sql* sql_handle = NULL;	///Link to mysql db, connection FD
+Sql* sql_handle = nullptr;	///Link to mysql db, connection FD
 
 int char_server_port = 3306;
 std::string char_server_ip = "127.0.0.1";
@@ -52,7 +52,7 @@ std::string char_server_id = "ragnarok";
 std::string char_server_pw = ""; // Allow user to send empty password (bugreport:7787)
 std::string char_server_db = "ragnarok";
 std::string default_codepage = ""; //Feature by irmin.
-unsigned int party_share_level = 10;
+uint32 party_share_level = 10;
 
 /// Received packet Lengths from map-server
 int inter_recv_packet_length[] = {
@@ -416,8 +416,8 @@ void geoip_readdb(void){
 /* There are millions of entries in GeoIP and it has its own algorithm to go quickly through them */
 const char* geoip_getcountry(uint32 ipnum){
 	int depth;
-	unsigned int x;
-	unsigned int offset = 0;
+	uint32 x;
+	uint32 offset = 0;
 
 	for (depth = 31; depth >= 0; depth--) {
 		const unsigned char *buf;
@@ -512,7 +512,7 @@ void mapif_parse_accinfo(int fd) {
 		} else {
 			if( Sql_NumRows(sql_handle) == 1 ) {//we found a perfect match
 				Sql_NextRow(sql_handle);
-				Sql_GetData(sql_handle, 0, &data, NULL); account_id = atoi(data);
+				Sql_GetData(sql_handle, 0, &data, nullptr); account_id = atoi(data);
 				Sql_FreeResult(sql_handle);
 			} else {// more than one, listing... [Dekamaster/Nightroad]
 				inter_to_fd(fd, u_fd, u_aid, (char *)msg_txt(214),(int)Sql_NumRows(sql_handle));
@@ -521,12 +521,12 @@ void mapif_parse_accinfo(int fd) {
 					short base_level, job_level, online;
 					char name[NAME_LENGTH];
 
-					Sql_GetData(sql_handle, 0, &data, NULL); account_id = atoi(data);
-					Sql_GetData(sql_handle, 1, &data, NULL); safestrncpy(name, data, sizeof(name));
-					Sql_GetData(sql_handle, 2, &data, NULL); class_ = atoi(data);
-					Sql_GetData(sql_handle, 3, &data, NULL); base_level = atoi(data);
-					Sql_GetData(sql_handle, 4, &data, NULL); job_level = atoi(data);
-					Sql_GetData(sql_handle, 5, &data, NULL); online = atoi(data);
+					Sql_GetData(sql_handle, 0, &data, nullptr); account_id = atoi(data);
+					Sql_GetData(sql_handle, 1, &data, nullptr); safestrncpy(name, data, sizeof(name));
+					Sql_GetData(sql_handle, 2, &data, nullptr); class_ = atoi(data);
+					Sql_GetData(sql_handle, 3, &data, nullptr); base_level = atoi(data);
+					Sql_GetData(sql_handle, 4, &data, nullptr); job_level = atoi(data);
+					Sql_GetData(sql_handle, 5, &data, nullptr); online = atoi(data);
 
 					inter_to_fd(fd, u_fd, u_aid, (char *)msg_txt(215), account_id, name, job_name(class_), base_level, job_level, online?"Online":"Offline");
 				}
@@ -587,13 +587,13 @@ void mapif_accinfo_ack(bool success, int map_fd, int u_fd, int u_aid, int accoun
 			char name[NAME_LENGTH];
 			char *data;
 
-			Sql_GetData(sql_handle, 0, &data, NULL); char_id = atoi(data);
-			Sql_GetData(sql_handle, 1, &data, NULL); safestrncpy(name, data, sizeof(name));
-			Sql_GetData(sql_handle, 2, &data, NULL); char_num = atoi(data);
-			Sql_GetData(sql_handle, 3, &data, NULL); class_ = atoi(data);
-			Sql_GetData(sql_handle, 4, &data, NULL); base_level = atoi(data);
-			Sql_GetData(sql_handle, 5, &data, NULL); job_level = atoi(data);
-			Sql_GetData(sql_handle, 6, &data, NULL); online = atoi(data);
+			Sql_GetData(sql_handle, 0, &data, nullptr); char_id = atoi(data);
+			Sql_GetData(sql_handle, 1, &data, nullptr); safestrncpy(name, data, sizeof(name));
+			Sql_GetData(sql_handle, 2, &data, nullptr); char_num = atoi(data);
+			Sql_GetData(sql_handle, 3, &data, nullptr); class_ = atoi(data);
+			Sql_GetData(sql_handle, 4, &data, nullptr); base_level = atoi(data);
+			Sql_GetData(sql_handle, 5, &data, nullptr); job_level = atoi(data);
+			Sql_GetData(sql_handle, 6, &data, nullptr); online = atoi(data);
 
 			inter_to_fd(map_fd, u_fd, u_aid, (char *)msg_txt(225), char_num, char_id, name, job_name(class_), base_level, job_level, online?"Online":"Offline");
 		}
@@ -666,7 +666,7 @@ int inter_accreg_fromsql(uint32 account_id, uint32 char_id, int fd, int type)
 {
 	char* data;
 	size_t len;
-	unsigned int plen = 0;
+	uint32 plen = 0;
 
 	switch( type ) {
 		case 3: //char reg
@@ -702,28 +702,28 @@ int inter_accreg_fromsql(uint32 account_id, uint32 char_id, int fd, int type)
 	 * { keyLength(B), key(<keyLength>), index(L), valLength(B), val(<valLength>) }
 	 **/
 	while ( SQL_SUCCESS == Sql_NextRow(sql_handle) ) {
-		Sql_GetData(sql_handle, 0, &data, NULL);
+		Sql_GetData(sql_handle, 0, &data, nullptr);
 		len = strlen(data)+1;
 
 		WFIFOB(fd, plen) = (unsigned char)len; // won't be higher; the column size is 32
 		plen += 1;
 
 		safestrncpy(WFIFOCP(fd,plen), data, len);
-		plen += len;
+		plen += static_cast<decltype(plen)>( len );
 
-		Sql_GetData(sql_handle, 1, &data, NULL);
+		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		WFIFOL(fd, plen) = (uint32)atol(data);
 		plen += 4;
 
-		Sql_GetData(sql_handle, 2, &data, NULL);
+		Sql_GetData(sql_handle, 2, &data, nullptr);
 		len = strlen(data)+1;
 
 		WFIFOB(fd, plen) = (unsigned char)len; // won't be higher; the column size is 254
 		plen += 1;
 
 		safestrncpy(WFIFOCP(fd,plen), data, len);
-		plen += len;
+		plen += static_cast<decltype(plen)>( len );
 
 		WFIFOW(fd, 14) += 1;
 
@@ -782,23 +782,23 @@ int inter_accreg_fromsql(uint32 account_id, uint32 char_id, int fd, int type)
 	 * { keyLength(B), key(<keyLength>), index(L), value(L) }
 	 **/
 	while ( SQL_SUCCESS == Sql_NextRow(sql_handle) ) {
-		Sql_GetData(sql_handle, 0, &data, NULL);
+		Sql_GetData(sql_handle, 0, &data, nullptr);
 		len = strlen(data)+1;
 
 		WFIFOB(fd, plen) = (unsigned char)len;/* won't be higher; the column size is 32 */
 		plen += 1;
 
 		safestrncpy(WFIFOCP(fd,plen), data, len);
-		plen += len;
+		plen += static_cast<decltype(plen)>( len );
 
-		Sql_GetData(sql_handle, 1, &data, NULL);
+		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		WFIFOL(fd, plen) = (uint32)atol(data);
 		plen += 4;
 
-		Sql_GetData(sql_handle, 2, &data, NULL);
+		Sql_GetData(sql_handle, 2, &data, nullptr);
 
-		WFIFOQ(fd, plen) = strtoll(data,NULL,10);
+		WFIFOQ(fd, plen) = strtoll(data,nullptr,10);
 		plen += 8;
 
 		WFIFOW(fd, 14) += 1;
@@ -837,7 +837,7 @@ int inter_config_read(const char* cfgName)
 	FILE* fp;
 
 	fp = fopen(cfgName, "r");
-	if(fp == NULL) {
+	if(fp == nullptr) {
 		ShowError("File not found: %s\n", cfgName);
 		return 1;
 	}
@@ -864,7 +864,7 @@ int inter_config_read(const char* cfgName)
 		else if(!strcmpi(w1,"default_codepage"))
 			default_codepage = w2;
 		else if(!strcmpi(w1,"party_share_level"))
-			party_share_level = (unsigned int)atof(w2);
+			party_share_level = (uint32)atof(w2);
 		else if(!strcmpi(w1,"log_inter"))
 			charserv_config.log_inter = atoi(w2);
 		else if(!strcmpi(w1,"inter_server_conf"))
@@ -1038,11 +1038,14 @@ void inter_final(void)
  * @param fd
  **/
 void inter_Storage_sendInfo(int fd) {
-	int size = sizeof(struct s_storage_table), len = 4 + interServerDb.size() * size, offset;
+	size_t offset = 4;
+	size_t size = sizeof( struct s_storage_table );
+	size_t len = offset + interServerDb.size() * size;
+
 	// Send storage table information
 	WFIFOHEAD(fd, len);
 	WFIFOW(fd, 0) = 0x388c;
-	WFIFOW(fd, 2) = len;
+	WFIFOW( fd, 2 ) = static_cast<int16>( len );
 	offset = 4;
 	for( auto storage : interServerDb ){
 		memcpy(WFIFOP(fd, offset), storage.second.get(), size);
@@ -1297,7 +1300,7 @@ int mapif_parse_Registry(int fd)
 			size_t lenkey = RFIFOB( fd, cursor );
 			const char* src_key= RFIFOCP(fd, cursor + 1);
 			std::string key( src_key, lenkey );
-			cursor += lenkey + 1;
+			cursor += static_cast<decltype(cursor)>( lenkey + 1 );
 
 			uint32  index = RFIFOL(fd, cursor);
 			cursor += 4;
@@ -1317,7 +1320,7 @@ int mapif_parse_Registry(int fd)
 					size_t len_val = RFIFOB( fd, cursor );
 					const char* src_val= RFIFOCP(fd, cursor + 1);
 					std::string sval( src_val, len_val );
-					cursor += len_val + 1;
+					cursor += static_cast<decltype(cursor)>( len_val + 1 );
 					inter_savereg( account_id, char_id, key.c_str(), index, 0, sval.c_str(), true );
 					break;
 				}
@@ -1376,13 +1379,13 @@ int mapif_parse_NameChangeRequest(int fd)
 	// Check Authorised letters/symbols in the name
 	if (charserv_config.char_config.char_name_option == 1) { // only letters/symbols in char_name_letters are authorised
 		for (i = 0; i < NAME_LENGTH && name[i]; i++)
-		if (strchr(charserv_config.char_config.char_name_letters, name[i]) == NULL) {
+		if (strchr(charserv_config.char_config.char_name_letters, name[i]) == nullptr) {
 			mapif_namechange_ack(fd, account_id, char_id, type, 0, name);
 			return 0;
 		}
 	} else if (charserv_config.char_config.char_name_option == 2) { // letters/symbols in char_name_letters are forbidden
 		for (i = 0; i < NAME_LENGTH && name[i]; i++)
-		if (strchr(charserv_config.char_config.char_name_letters, name[i]) != NULL) {
+		if (strchr(charserv_config.char_config.char_name_letters, name[i]) != nullptr) {
 			mapif_namechange_ack(fd, account_id, char_id, type, 0, name);
 			return 0;
 		}
