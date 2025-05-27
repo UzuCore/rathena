@@ -15,7 +15,7 @@ namespace rathena{
 	namespace tool_csv2yaml{
 		class Csv2YamlTool : public Core{
 			protected:
-				bool initialize( int argc, char* argv[] ) override;
+				bool initialize( int32 argc, char* argv[] ) override;
 
 			public:
 				Csv2YamlTool() : Core( e_core_type::TOOL ){
@@ -53,7 +53,7 @@ std::map<uint16, std::vector<s_skill_tree_entry_csv>> skill_tree;	/// job id (fo
 // Database to memory maps
 struct s_skill_unit_csv : s_skill_db {
 	std::string target_str;
-	int unit_flag_csv;
+	int32 unit_flag_csv;
 };
 
 std::unordered_map<uint16, s_skill_require> skill_require;
@@ -150,10 +150,10 @@ struct s_job_param {
 	int32 str, agi, vit, int_, dex, luk;
 };
 
-std::unordered_map<int, std::vector<int>> job_db2;
-std::unordered_map<int, std::vector<int64>> job_hp, job_sp;
-std::unordered_map<int, s_job_param> job_param;
-std::unordered_map<int, int> exp_base_level, exp_job_level;
+std::unordered_map<int32, std::vector<int32>> job_db2;
+std::unordered_map<int32, std::vector<int64>> job_hp, job_sp;
+std::unordered_map<int32, s_job_param> job_param;
+std::unordered_map<int32, int32> exp_base_level, exp_job_level;
 
 struct s_elemental_skill_csv {
 	std::string skill_name,
@@ -170,7 +170,7 @@ struct s_mercenary_skill_csv {
 
 std::unordered_map<uint16, std::vector<s_mercenary_skill_csv>> mercenary_skill_tree;
 
-static std::map<std::string, int> um_mapid2jobname {
+static std::map<std::string, int32> um_mapid2jobname {
 	{ "Novice", JOB_NOVICE }, // Novice and Super Novice share the same value
 	{ "SuperNovice", JOB_NOVICE },
 	{ "Swordman", JOB_SWORDMAN },
